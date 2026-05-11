@@ -24,20 +24,20 @@ bool QuadMesh::GenerateQuadMesh(bool bSimpl, double voxelSize[3], const char* fi
 	std::chrono::steady_clock::time_point t0, t1;
 	t0 = std::chrono::steady_clock::now();
 
-	// 存储顶点和面片索引
+	// Store vertices and face indices
 	std::vector<VARPoint3D> vertices;
 	std::vector<std::vector<int>> faces;
 	vertices.reserve(quad_count * 2);
 	faces.reserve(quad_count);
 
-	// 用于顶点去重的映射表
+	// Map for vertex deduplication
 	std::unordered_map<VARVoxPointKey, uint64_t, VARVoxPointKeyHash> vertexMap;
 	vertexMap.reserve(quad_count * 2);
 	uint64_t vertexCount = 0;
 
 	VARextvoxel_addr local;
 
-	// 处理每个四边形面片
+	// Process each quad face
 	for (size_t i = 0; i < quad_count; ++i)
 	{
 		const VARQuadFaceInfo& quadInfo = quads[i];
@@ -45,18 +45,18 @@ bool QuadMesh::GenerateQuadMesh(bool bSimpl, double voxelSize[3], const char* fi
 		local.y = quadInfo.addr.y;
 		local.z = quadInfo.addr.z;
 
-		// 计算体素的世界坐标边界
+		// Calculate voxel world coordinate bounds
 		VARPoint3D voxelMin(
-			voxelSize[0] * quadInfo.addr.x + 0.0,  //假设坐标原点
+			voxelSize[0] * quadInfo.addr.x + 0.0,  //Assume origin at (0,0,0)
 			voxelSize[1] * quadInfo.addr.y + 0.0,
 			voxelSize[2] * quadInfo.addr.z + 0.0
 		);
 
-		// 根据面方向生成四个顶点
+		// Generate four vertices based on face direction
 		std::vector<VARPoint3D> faceVertices(4);
 		std::vector<VARVoxPointKey> key(4);
 
-		// 定义六个面的顶点配置（相对于体素最小角点）
+		// Define vertex configuration for six face directions (relative to voxel min corner)
 		switch (quadInfo.ifacedir)
 		{
 		case 0: // +X face
@@ -120,10 +120,10 @@ bool QuadMesh::GenerateQuadMesh(bool bSimpl, double voxelSize[3], const char* fi
 			key[3] = VARVoxPointKey(local.x + 1, local.y + 1, local.z);
 			break;
 		default:
-			continue; // 无效的面方向
+			continue; // Invalid face direction
 		}
 
-		// 为当前面的四个顶点建立索引
+		// Build indices for the four vertices of current face
 		std::vector<int> faceIndices(4);
 
 		for (int j = 0; j < 4; ++j)
@@ -131,16 +131,16 @@ bool QuadMesh::GenerateQuadMesh(bool bSimpl, double voxelSize[3], const char* fi
 			const VARPoint3D& v = faceVertices[j];
 			const VARVoxPointKey& voxkey = key[j];
 
-			// 检查顶点是否已存在
+			// Check if vertex already exists
 			auto it = vertexMap.find(voxkey);
 			if (it != vertexMap.end())
 			{
-				// 使用已存在的顶点索引
+				// Use existing vertex index
 				faceIndices[j] = it->second;
 			}
 			else
 			{
-				// 添加新顶点
+				// Add new vertex
 				vertices.push_back(v);
 				vertexMap[voxkey] = vertexCount;
 				faceIndices[j] = vertexCount;

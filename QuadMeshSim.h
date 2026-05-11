@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "BaseSim.h"
 
@@ -46,7 +46,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType);
 #include <utility> // for std::pair
 #include <vector>
 
-// 自定义哈希函数
+// Custom hash function
 struct PairHash
 {
   size_t operator()(const std::pair<vtkIdType, vtkIdType>& key) const
@@ -105,7 +105,7 @@ public:
       return nullptr;
     }
 
-    // Step 1: // 计算法向量和邻接关系
+    // Step 1: Compute normals and adjacency relationships
     std::vector<std::vector<int>> adjFaces(numCells);
     std::vector<std::vector<vtkIdType>> cellPoints(numCells);
     std::vector<Vector3> normals(numCells);
@@ -137,7 +137,7 @@ public:
       }
     }
 
-    // Step 3: 添加未处理的四边形
+    // Step 3: Add unprocessed quads
     vtkSmartPointer<vtkIdList> cellIds = vtkSmartPointer<vtkIdList>::New();
     for (vtkIdType cellId = 0; cellId < numCells; ++cellId)
     {
@@ -151,7 +151,7 @@ public:
     output->SetPoints(input->GetPoints());
     output->SetPolys(outputPolys);
 
-    // 清理孤立点
+    // Clean up isolated points
     vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
     cleaner->SetInputData(output);
     cleaner->PointMergingOn();
@@ -220,7 +220,7 @@ private:
       // Compute normal
       normals[cellId] = ComputeQuadNormal(points, pts);
 
-      // Add edges to edgeMap // 添加边到边映射
+      // Add edges to edgeMap
       for (int j = 0; j < 4; ++j)
       {
         vtkIdType a = pts[j];
@@ -301,11 +301,12 @@ private:
   }
 
   /**
-   * @brief 查找并返回单元中与'targetPoint'相邻且不是'otherSharedPoint'的点。
-   * * @param cell 定义单元的点ID列表（必须是有序的，例如逆时针）。
-   * @param targetPoint 我们要查找其邻居的点。
-   * @param otherSharedPoint 需要排除的相邻点（共享边上的另一个点）。
-   * @return vtkIdType 相邻的唯一（外围）点。
+   * @brief Find and return the point in the cell that is adjacent to 'targetPoint'
+   *        and is not 'otherSharedPoint'.
+   * @param cell List of point IDs defining the cell (must be ordered, e.g., counter-clockwise).
+   * @param targetPoint The point whose neighbor we want to find.
+   * @param otherSharedPoint The adjacent point to exclude (the other point on the shared edge).
+   * @return vtkIdType The unique adjacent (peripheral) point.
    */
   vtkIdType findUniqueAdjacentPoint(
     const std::vector<vtkIdType>& cell, vtkIdType targetPoint, vtkIdType otherSharedPoint)
@@ -314,14 +315,14 @@ private:
     {
       if (cell[i] == targetPoint)
       {
-        // 检查前一个点（处理循环边界）
+        // Check previous point (handle wrap-around)
         vtkIdType prevPoint = cell[(i + cell.size() - 1) % cell.size()];
         if (prevPoint != otherSharedPoint)
         {
           return prevPoint;
         }
 
-        // 检查后一个点（处理循环边界）
+        // Check next point (handle wrap-around)
         vtkIdType nextPoint = cell[(i + 1) % cell.size()];
         if (nextPoint != otherSharedPoint)
         {
@@ -329,7 +330,7 @@ private:
         }
       }
     }
-    // 如果找不到，这是一个逻辑错误，表明输入单元有问题
+    // If not found, this is a logic error indicating invalid input cell
     throw std::runtime_error("Could not find unique adjacent point. Check cell connectivity.");
   }
 
@@ -340,9 +341,9 @@ private:
   //   {
   //     if (cell[i] == targetPoint)
   //     {
-  //       // 检查前一个点（处理循环边界）
+  //       // Check previous point (handle wrap-around)
   //       vtkIdType prevPoint = cell[(i + cell.size() - 1) % cell.size()];
-  //       // 检查后一个点（处理循环边界）
+  //       // Check next point (handle wrap-around)
   //       vtkIdType nextPoint = cell[(i + 1) % cell.size()];
 
   //      if (prevPoint == otherSharedPoint)
@@ -356,7 +357,7 @@ private:
   //      }
   //    }
   //  }
-  //  // 如果找不到，这是一个逻辑错误，表明输入单元有问题
+  //  // If not found, this is a logic error indicating invalid input cell
   //  throw std::runtime_error("Could not find unique adjacent point. Check cell connectivity.");
   //}
 
@@ -364,13 +365,13 @@ private:
   // quad2,
   //   std::vector<vtkIdType>& mergedQuad, std::vector<Edge>& adjEdges)
   //{
-  //   // 步骤1: 输入验证
+  //   // Step 1: Input validation
   //   if (quad1.size() != 4 || quad2.size() != 4)
   //   {
   //     return false;
   //   }
 
-  //  // 步骤2: 查找共享的点
+  //  // Step 2: Find shared points
   //  std::unordered_set<vtkIdType> quad1_points(quad1.begin(), quad1.end());
   //  std::vector<vtkIdType> sharedPoints;
   //  for (vtkIdType id : quad2)
@@ -381,30 +382,30 @@ private:
   //    }
   //  }
 
-  //  // 两个相邻的四边形必须共享且只共享两个点
+  //  // Two adjacent quads must share exactly two points
   //  if (sharedPoints.size() != 2)
   //  {
   //    return false;
   //  }
 
-  //  // 步骤3: 识别共享边和外围点
+  //  // Step 3: Identify shared edge and peripheral points
   //  vtkIdType s1 = sharedPoints[0];
   //  vtkIdType s2 = sharedPoints[1];
 
   //  try
   //  {
-  //    // 假设单元的点是按顺序（例如，逆时针）排列的。
-  //    // 新四边形的四个角点是与共享点相邻、但本身不是共享点的那些点。
+  //    // Assume cell points are ordered (e.g., counter-clockwise).
+  //    // The four corners of the new quad are points adjacent to shared points but not shared themselves.
 
-  //    // 查找 quad1 中与 s1 和 s2 相邻的唯一顶点
+  //    // Find unique vertices in quad1 adjacent to s1 and s2
   //    vtkIdType p4 = findUniqueAdjacentPointOpt(quad1, s1, s2);
   //    vtkIdType p1 = findUniqueAdjacentPointOpt(quad1, s2, s1);
 
-  //    // 查找 quad2 中与 s1 和 s2 相邻的唯一顶点
+  //    // Find unique vertices in quad2 adjacent to s1 and s2
   //    vtkIdType p3 = findUniqueAdjacentPointOpt(quad2, s1, s2);
   //    vtkIdType p2 = findUniqueAdjacentPointOpt(quad2, s2, s1);
 
-  //    // 步骤4: 按照正确的顺序组装新的四边形
+  //    // Step 4: Assemble new quad in correct order
   //    mergedQuad[0] = p1;
   //    mergedQuad[1] = p2;
   //    mergedQuad[2] = p3;
@@ -463,18 +464,18 @@ private:
 
     try
     {
-      // 假设单元的点是按顺序（例如，逆时针）排列的。
-      // 新四边形的四个角点是与共享点相邻、但本身不是共享点的那些点。
+      // Assume cell points are ordered (e.g., counter-clockwise).
+      // The four corners of the new quad are points adjacent to shared points but not shared themselves.
 
-      // 查找 quad1 中与 s1 和 s2 相邻的唯一顶点
+      // Find unique vertices in quad1 adjacent to s1 and s2
       vtkIdType p4 = findUniqueAdjacentPoint(quad1, s1, s2);
       vtkIdType p1 = findUniqueAdjacentPoint(quad1, s2, s1);
 
-      // 查找 quad2 中与 s1 和 s2 相邻的唯一顶点
+      // Find unique vertices in quad2 adjacent to s1 and s2
       vtkIdType p3 = findUniqueAdjacentPoint(quad2, s1, s2);
       vtkIdType p2 = findUniqueAdjacentPoint(quad2, s2, s1);
 
-      // 步骤4: 按照正确的顺序组装新的四边形
+      // Step 4: Assemble new quad in correct order
       mergedQuad[0] = p1;
       mergedQuad[1] = p2;
       mergedQuad[2] = p3;
@@ -519,22 +520,22 @@ private:
 
     try
     {
-      // 假设单元的点是按顺序（例如，逆时针）排列的。
-      // 新四边形的四个角点是与共享点相邻、但本身不是共享点的那些点。
+      // Assume cell points are ordered (e.g., counter-clockwise).
+      // The four corners of the new quad are points adjacent to shared points but not shared themselves.
 
-      // 查找 quad1 中与 s1 和 s2 相邻的唯一顶点
+      // Find unique vertices in quad1 adjacent to s1 and s2
       vtkIdType p4 = findUniqueAdjacentPoint(quad1, s1, s2);
       vtkIdType p1 = findUniqueAdjacentPoint(quad1, s2, s1);
 
       quad1Edge = (p1 < p4) ? std::make_pair(p1, p4) : std::make_pair(p4, p1);
 
-      // 查找 quad2 中与 s1 和 s2 相邻的唯一顶点
+      // Find unique vertices in quad2 adjacent to s1 and s2
       vtkIdType p3 = findUniqueAdjacentPoint(quad2, s1, s2);
       vtkIdType p2 = findUniqueAdjacentPoint(quad2, s2, s1);
 
       quad2Edge = (p3 < p2) ? std::make_pair(p3, p2) : std::make_pair(p2, p3);
 
-      // 步骤4: 按照正确的顺序组装新的四边形
+      // Step 4: Assemble new quad in correct order
       mergedQuad[0] = p1;
       mergedQuad[1] = p2;
       mergedQuad[2] = p3;
@@ -552,13 +553,13 @@ private:
   void MergeRegion(vtkPolyData* mesh, vtkCellArray* outputPolys, std::vector<bool>& merged,
     std::vector<vtkIdType>& region, const std::vector<std::vector<vtkIdType>>& cellPoints)
   {
-    std::unordered_map<vtkIdType, std::vector<vtkIdType>> mapNewQuads; // 合并后四边形单元
+    std::unordered_map<vtkIdType, std::vector<vtkIdType>> mapNewQuads; // merged quad cells
 
-    // 构建边-面映射
+    // Build edge-face map
     EdgeFaceMap edgeFaceMap;
 
     for (vtkIdType cellId : region)
-    { // region为该区域共面的所有四边形单元
+    { // region contains all coplanar quad cells in this region
 
       const auto& points = cellPoints[cellId];
       for (int j = 0; j < 4; ++j)
@@ -572,7 +573,7 @@ private:
       mapNewQuads[cellId] = points;
     }
 
-    // 只需要维护新增边-新增四边形单元动态关系
+    // Only need to maintain dynamic relationship between new edges and new quad cells
     vtkIdType iNewCellId = m_maxCellId;
     std::vector<bool> mergedNew;
     mergedNew.reserve(16);
@@ -588,20 +589,20 @@ private:
       for (auto entry = edgeFaceMap.begin(); entry != edgeFaceMap.end(); ++entry)
       {
         if (entry->second.size() != 2)
-        { // 非内部边（被两个面共享）
+        { // Not an internal edge (shared by two faces)
           continue;
         }
 
         bAdded = true;
 
-        // 两个面需要被合并
+        // Two faces need to be merged
         vtkIdType f1 = entry->second[0];
         vtkIdType f2 = entry->second[1];
 
         std::vector<vtkIdType>& quad1 = mapNewQuads[f1];
         std::vector<vtkIdType>& quad2 = mapNewQuads[f2];
 
-        // 单元状态标记
+        // Mark cell status
         if (f1 < m_maxCellId)
           merged[f1] = true;
         else
@@ -611,7 +612,7 @@ private:
         else
           mergedNew[f2 - m_maxCellId] = true;
 
-        // 新的四边形单元
+        // New quad cell
         mergedNew.push_back(false);
 
         if (bOptimize) // optimized code
@@ -739,7 +740,7 @@ private:
         break;
     }
 
-    // 添加新增的且最终的四边形
+    // Add newly created and final quads
     for (auto it = mapNewQuads.begin(); it != mapNewQuads.end(); ++it)
     {
       if (it->first < m_maxCellId)

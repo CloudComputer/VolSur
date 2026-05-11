@@ -10,20 +10,20 @@
 class DynamicBitset
 {
 public:
-  // 默认构造函数（空 bitset）
+  // Default constructor (empty bitset)
   DynamicBitset()
     : bit_count(0)
   {
   }
 
-  // 指定大小的构造函数（默认全0）
+  // Constructor with specified size (default all 0)
   explicit DynamicBitset(size_t size, bool value = false)
     : bit_count(size)
   {
     size_t blocks = blocks_needed(size);
     data.resize(blocks, value ? ~Block(0) : Block(0));
 
-    // 处理最后一块中多余位的初始化
+    // Handle initialization of extra bits in last block
     if (value && size > 0)
     {
       size_t last_block_bits = size % bits_per_block;
@@ -34,7 +34,7 @@ public:
     }
   }
 
-  // 设置所有位为1
+  // Set all bits to 1
   void set()
   {
     std::fill(data.begin(), data.end(), ~Block(0));
@@ -44,7 +44,7 @@ public:
     }
   }
 
-  // 设置指定位置为1（默认）或指定值
+  // Set specified position to 1 (default) or specified value
   void set(size_t pos, bool value = true)
   {
     if (pos >= bit_count)
@@ -66,13 +66,13 @@ public:
     }
   }
 
-  // 重置所有位为0
+  // Reset all bits to 0
   void reset() { std::fill(data.begin(), data.end(), Block(0)); }
 
-  // 重置指定位置为0
+  // Reset specified position to 0
   void reset(size_t pos) { set(pos, false); }
 
-  // 翻转所有位
+  // Flip all bits
   void flip()
   {
     for (auto& block : data)
@@ -82,7 +82,7 @@ public:
     trim_last_block();
   }
 
-  // 翻转指定位
+  // Flip specified bit
   void flip(size_t pos)
   {
     if (pos >= bit_count)
@@ -96,7 +96,7 @@ public:
     data[block_idx] ^= mask;
   }
 
-  // 测试指定位的值
+  // Test value of specified bit
   bool test(size_t pos) const
   {
     if (pos >= bit_count)
@@ -109,10 +109,10 @@ public:
     return (data[block_idx] >> bit_idx) & 1;
   }
 
-  // 返回bitset大小
+  // Return bitset size
   size_t size() const { return bit_count; }
 
-  // 计算设置位（1）的数量
+  // Count number of set bits (1s)
   size_t count() const
   {
     size_t total = 0;
@@ -123,17 +123,17 @@ public:
     return total;
   }
 
-  // 调整bitset大小
+  // Resize bitset
   void resize(size_t new_size, bool value = false)
   {
     size_t old_blocks = blocks_needed(bit_count);
     size_t new_blocks = blocks_needed(new_size);
 
-    // 处理大小变化
+    // Handle size change
     bit_count = new_size;
     data.resize(new_blocks, value ? ~Block(0) : Block(0));
 
-    // 处理新增长的位
+    // Handle newly grown bits
     if (new_size > bit_count && value)
     {
       if (old_blocks > 0)
@@ -147,11 +147,11 @@ public:
       }
     }
 
-    // 清理最后一块的多余位
+    // Trim extra bits in last block
     trim_last_block();
   }
 
-  // 按位与操作
+  // Bitwise AND operation
   DynamicBitset& operator&=(const DynamicBitset& other)
   {
     if (bit_count != other.bit_count)
@@ -167,7 +167,7 @@ public:
     return *this;
   }
 
-  // 按位或操作
+  // Bitwise OR operation
   DynamicBitset& operator|=(const DynamicBitset& other)
   {
     if (bit_count != other.bit_count)
@@ -183,7 +183,7 @@ public:
     return *this;
   }
 
-  // 按位异或操作
+  // Bitwise XOR operation
   DynamicBitset& operator^=(const DynamicBitset& other)
   {
     if (bit_count != other.bit_count)
@@ -203,12 +203,12 @@ private:
   using Block = uint64_t;
   static constexpr size_t bits_per_block = std::numeric_limits<Block>::digits;
   std::vector<Block> data;
-  size_t bit_count; // 位总数
+  size_t bit_count; // total number of bits
 
-  // 计算需要的Block数量
+  // Calculate number of Blocks needed
   static size_t blocks_needed(size_t bits) { return (bits + bits_per_block - 1) / bits_per_block; }
 
-  // 清理最后一块中多余的位
+  // Trim extra bits in last block
   void trim_last_block()
   {
     if (bit_count == 0)
@@ -228,13 +228,13 @@ private:
     while (x)
     {
       count++;
-      x &= x - 1; // 清除最低位
+      x &= x - 1; // Clear lowest bit
     }
     return count;
   }
 };
 
-// 非成员位操作函数
+// Non-member bitwise operators
 DynamicBitset operator&(const DynamicBitset& lhs, const DynamicBitset& rhs)
 {
   DynamicBitset result = lhs;

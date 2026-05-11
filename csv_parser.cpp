@@ -15,15 +15,15 @@ static io::LineReader* g_reader = NULL;
 int csv_reader_init(const char* file_name)
 {
     if (g_reader != NULL) {
-        csv_reader_free(); // 避免重复初始化
+        csv_reader_free(); // Avoid repeated initialization
     }
     try {
         g_reader = new io::LineReader(file_name);
-        return 0; // 成功
+        return 0; // Success
     }
     catch (...) {
         g_reader = NULL;
-        return -1; // 失败
+        return -1; // Failure
     }
 }
 

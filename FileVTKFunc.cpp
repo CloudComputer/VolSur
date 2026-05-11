@@ -41,7 +41,7 @@ vtkSmartPointer<vtkPolyData> CFileVTKFunc::ReadPLYFile(const std::string& filena
   vtkSmartPointer<vtkPLYReader> reader = vtkSmartPointer<vtkPLYReader>::New();
 
   reader->SetFileName(filename.c_str());
-  reader->SetGlobalWarningDisplay(0); // 禁用全局警告
+  reader->SetGlobalWarningDisplay(0); // Disable global warning
 
   reader->Update();
 
@@ -190,14 +190,14 @@ void CFileVTKFunc::PolyDataColorizerVtp(vtkPolyData* input, const std::string& f
     return;
   }
 
-  // 配置颜色查找表（彩虹色系）
+  // Configure color lookup table (rainbow color scheme)
   vtkSmartPointer<vtkLookupTable> lookupTable = vtkSmartPointer<vtkLookupTable>::New();
-  lookupTable->SetHueRange(0.666, 0.0); // 蓝 -> 红
+  lookupTable->SetHueRange(0.666, 0.0); // Blue -> Red
   lookupTable->SetSaturationRange(1.0, 1.0);
   lookupTable->SetValueRange(1.0, 1.0);
   lookupTable->Build();
 
-  // 步骤1: 三角化网格（确保面积计算准确）
+  // Step 1: Triangulate mesh (ensure accurate area calculation)
   vtkSmartPointer<vtkTriangleFilter> triangulator = vtkSmartPointer<vtkTriangleFilter>::New();
   triangulator->SetInputData(input);
   triangulator->PassVertsOff();
@@ -205,7 +205,7 @@ void CFileVTKFunc::PolyDataColorizerVtp(vtkPolyData* input, const std::string& f
   triangulator->Update();
   vtkPolyData* triangulated = triangulator->GetOutput();
 
-  // 步骤2: 计算单元面积
+  // Step 2: Compute cell area
   vtkSmartPointer<vtkCellSizeFilter> sizeFilter = vtkSmartPointer<vtkCellSizeFilter>::New();
   sizeFilter->SetInputData(triangulated);
   sizeFilter->ComputeAreaOn();
@@ -215,27 +215,27 @@ void CFileVTKFunc::PolyDataColorizerVtp(vtkPolyData* input, const std::string& f
   sizeFilter->Update();
   vtkPolyData* sizedData = sizeFilter->GetPolyDataOutput();
 
-  // 步骤3: 获取面积数组
+  // Step 3: Get area array
   vtkDoubleArray* areaArray =
     vtkDoubleArray::SafeDownCast(sizedData->GetCellData()->GetArray("Area"));
 
-  // 步骤4: 计算面积范围（用于颜色映射）
+  // Step 4: Compute area range (for color mapping)
   double areaRange[2];
   areaArray->GetRange(areaRange);
   lookupTable->SetRange(areaRange[0], areaRange[1]);
 
-  // 步骤5: 创建映射器并设置颜色
+  // Step 5: Create mapper and set color
   vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
   mapper->SetInputData(sizedData);
   mapper->SetScalarModeToUseCellData();
   mapper->SetScalarRange(areaRange);
   mapper->SetLookupTable(lookupTable);
 
-  // 步骤6: 写入VTP文件
+  // Step 6: Write VTP file
   vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
   writer->SetFileName(filename.c_str());
   writer->SetInputData(sizedData);
   writer->SetDataModeToBinary();
-  writer->EncodeAppendedDataOff(); // 提高兼容性
+  writer->EncodeAppendedDataOff(); // Improve compatibility
   writer->Write();
 }

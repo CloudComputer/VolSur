@@ -35,10 +35,10 @@ static std::vector<std::string> simple_split_surf(const char* s, char delimiter)
 	std::string token;
 	std::istringstream tokenStream(s);
 	while (std::getline(tokenStream, token, delimiter)) {
-		// 实际应用中可能需要去除空格或引号
-		// 例如：token.erase(0, token.find_first_not_of(" \t\""));
+		// In practice, you may need to remove spaces or quotes
+		// e.g., token.erase(0, token.find_first_not_of(" \t\""));
 		//       token.erase(token.find_last_not_of(" \t\"") + 1);
-		tokens.emplace_back(std::move(token)); // 移动而非拷贝
+		tokens.emplace_back(std::move(token)); // Move instead of copy
 	}
 	return tokens;
 }
@@ -48,10 +48,10 @@ void simple_split_surf(const char* s, char delimiter, std::vector<std::string>& 
 	std::string token;
 	std::istringstream tokenStream(s);
 	while (std::getline(tokenStream, token, delimiter)) {
-		// 实际应用中可能需要去除空格或引号
-		// 例如：token.erase(0, token.find_first_not_of(" \t\""));
+		// In practice, you may need to remove spaces or quotes
+		// e.g., token.erase(0, token.find_first_not_of(" \t\""));
 		//       token.erase(token.find_last_not_of(" \t\"") + 1);
-		tokens.emplace_back(std::move(token)); // 移动而非拷贝
+		tokens.emplace_back(std::move(token)); // Move instead of copy
 	}
 	return;
 }
@@ -59,52 +59,52 @@ void simple_split_surf(const char* s, char delimiter, std::vector<std::string>& 
 static bool can_parse_as_long(const char* s) {
 	std::istringstream iss(s);
 	int n;
-	return (iss >> n) && iss.eof();  // 成功读取整数且无剩余字符
+	return (iss >> n) && iss.eof();  // Successfully reads integer with no remaining characters
 }
 
 static bool can_parse_as_double(const char* s) {
 	std::istringstream iss(s);
 	double d;
-	return (iss >> d) && iss.eof();  // 成功读取浮点数且无剩余字符
+	return (iss >> d) && iss.eof();  // Successfully reads double with no remaining characters
 }
 
 void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 {
-	//体素大小：要求该体素大小是所有块段各维度尺寸的倍数
+	// Voxel size: must be a multiple of all block dimensions
 	double voxelSize = 1e10;
 
-	//块段模型定义
+	// Block model definitions
 	double dOrigin[3], dDest[3];
 
-	//计算范围
+	// Calculation range
 	double dXOrigin, dYOrigin, dZOrigin, dXDest, dYDest, dZDest;
-	//块段长度
+	// Block lengths
 	double dXLen, dYLen, dZLen;
 
-	//左下角点
+	// Bottom-left corner
 	dXOrigin = std::numeric_limits<double>::max();
 	dYOrigin = std::numeric_limits<double>::max();
 	dZOrigin = std::numeric_limits<double>::max();
 
-	//右上角点
+	// Top-right corner
 	dXDest = std::numeric_limits<double>::min();
 	dYDest = std::numeric_limits<double>::min();
 	dZDest = std::numeric_limits<double>::min();
 
-	//最小单元块尺寸
+	// Minimum unit block size
 	double dbMinSize[3] = { std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max() };
 
 	std::cout << "Reading csv file: " << filename << std::endl;
 
-	//字段信息
+	// Field information
 	std::vector<std::string> header_fields;
-	std::vector<int> header_types;  //字段模型：0-int，1-float，2-string
+	std::vector<int> header_types;  // Field types: 0-int, 1-float, 2-string
 
 	try
 	{
 		io::LineReader line_reader(filename.c_str());
 
-		// 读取第一行作为表头
+		// Read first line as header
 		char* header_c_str = line_reader.next_line();
 		if (header_c_str)
 		{
@@ -118,14 +118,14 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 			return;
 		}
 
-		// 读取第二行判断类型
+		// Read second line to determine types
 		char* type_c_str = line_reader.next_line();
 		if (type_c_str)
 		{
 			char delimiter = ',';
 			std::vector<std::string> string_fields = simple_split_surf(type_c_str, delimiter);
 
-			//如果浮点数存为0，则应进一步判断是否确实为整数
+			// If float stored as 0, should further check if it's actually an integer
 			for (const auto& field : string_fields) {
 				if (can_parse_as_long(field.c_str())) {
 					header_types.push_back(0);
@@ -151,16 +151,16 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 	std::cout << "Reading csv file: first time..." << std::endl;
 
 	try
-	{//第一次遍历获取块段模型基本信息
+	{// First pass to get block model basic information
 		io::CSVReader<6> in(filename);
-		//ignore_extra_column：如果具有名称的列在文件中，但不在参数列表中，则会以静默方式忽略该列
-		//ignore_missing_column：如果具有名称的列不在文件中，但在参数列表中，则 read_row 不会修改相应的变量
+		//ignore_extra_column: If a named column exists in the file but not in the parameter list, it will be silently ignored
+		//ignore_missing_column: If a named column does not exist in the file but is in the parameter list, read_row will not modify the corresponding variable
 		in.read_header(io::ignore_extra_column, "X", "Y", "Z", "xLen", "yLen", "zLen");
 
 		double dX, dY, dZ, xLen, yLen, zLen;
 		while (in.read_row(dX, dY, dZ, xLen, yLen, zLen))
 		{
-			//取整，避免浮点问题
+			// Round to avoid floating point issues
 			xLen = std::round(xLen * 1000.0) / 1000.0;
 			yLen = std::round(yLen * 1000.0) / 1000.0;
 			zLen = std::round(zLen * 1000.0) / 1000.0;
@@ -212,18 +212,18 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 		return;
 	}
 
-	dXLen = dXDest - dXOrigin;  //x轴上 此块段模型的最大跨度
-	dYLen = dYDest - dYOrigin;  //y轴上 此块段模型的最大跨度
-	dZLen = dZDest - dZOrigin;  //z轴上 此块段模型的最大跨度
+	dXLen = dXDest - dXOrigin;  // Maximum span of block model on x-axis
+	dYLen = dYDest - dYOrigin;  // Maximum span of block model on y-axis
+	dZLen = dZDest - dZOrigin;  // Maximum span of block model on z-axis
 
-	//按八叉树补全块段模型范围（以左下角为基准,补全右上角）
+	// Complete block model range using octree (with bottom-left corner as reference, complete top-right)
 	double dMaxLevel = std::log2(std::max(std::max(std::round(dXLen / dbMinSize[0]), std::round(dYLen / dbMinSize[1])), std::round(dZLen / dbMinSize[2])));
 	int iMaxLevel = std::ceil(dMaxLevel);
 	double dXLenCloud = dbMinSize[0] * std::pow(2, iMaxLevel);
 	double dYLenCloud = dbMinSize[1] * std::pow(2, iMaxLevel);
 	double dZLenCloud = dbMinSize[2] * std::pow(2, iMaxLevel);
 
-	//最小体素尺寸
+	// Minimum voxel size
 	if (voxelSize > dbMinSize[0])
 		voxelSize = dbMinSize[0];
 	if (voxelSize > dbMinSize[1])
@@ -239,10 +239,10 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 
 	std::cout << "Reading csv file: second time..." << std::endl;
 
-	//字段信息
+	// Field information
 	std::string defstring;
 	for (int i = /*0*/6; i < header_fields.size(); i++)
-	{//从第7列开始为字段
+	{// Fields start from column 7
 		int iType = header_types[i];
 		std::string type;
 		if (iType == 0)
@@ -250,7 +250,7 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 		else if (iType == 1)
 			type = "float32_t";
 		else if (iType == 2)
-			type = "varchar24";  //24字符串大小
+			type = "varchar24";  // Max 24 characters
 		else
 			continue;
 		std::string name = header_fields[i];
@@ -261,7 +261,7 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 		defstring += name;
 	}
 
-	// 创建体素文件
+	// Create voxel file
 	double origin[3] = { dXOrigin, dYOrigin, dZOrigin };
 	double size[3] = { dXLenCloud, dYLenCloud, dZLenCloud };
 	double rot[3] = { 0.0, 0.0, 0.0 };
@@ -269,47 +269,47 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 
 #ifdef VTKSURFVAR
 
-	// 创建 VTK 数据结构
+	// Create VTK data structure
 	vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 	vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
 
-	// 存储单元数据（块段大小）
+	// Store cell data (block size)
 	vtkSmartPointer<vtkFloatArray> cellData = vtkSmartPointer<vtkFloatArray>::New();
 	cellData->SetNumberOfComponents(1);
 	cellData->SetName("block_value");
 
 	{
-		// 第二次读取：处理每个块段
+		// Second read: process each block
 		try
 		{
 			io::CSVReader<6> in(filename);
-			//ignore_extra_column：如果具有名称的列在文件中，但不在参数列表中，则会以静默方式忽略该列
-			//ignore_missing_column：如果具有名称的列不在文件中，但在参数列表中，则 read_row 不会修改相应的变量
+			//ignore_extra_column: If a named column exists in the file but not in the parameter list, it will be silently ignored
+			//ignore_missing_column: If a named column does not exist in the file but is in the parameter list, read_row will not modify the corresponding variable
 			in.read_header(io::ignore_extra_column, "X", "Y", "Z", "xLen", "yLen", "zLen");
 
 			int blockCount = 0;
 			double dX, dY, dZ, xLen, yLen, zLen;
 			while (in.read_row(dX, dY, dZ, xLen, yLen, zLen))
 			{
-				//取整，避免浮点问题
+				// Round to avoid floating point issues
 				xLen = std::round(xLen * 1000.0) / 1000.0;
 				yLen = std::round(yLen * 1000.0) / 1000.0;
 				zLen = std::round(zLen * 1000.0) / 1000.0;
 
-				// 计算最小角点坐标
+				// Calculate minimum corner coordinates
 				double minX = dX - xLen * 0.5;
 				double minY = dY - yLen * 0.5;
 				double minZ = dZ - zLen * 0.5;
 
-				// 计算最大角点坐标
+				// Calculate maximum corner coordinates
 				double maxX = minX + xLen;
 				double maxY = minY + yLen;
 				double maxZ = minZ + zLen;
 
-				// 计算块段的8个顶点坐标（基于最小角点和尺寸）
-				// VTK_HEXAHEDRON 顶点顺序: (0,0,0), (1,0,0), (1,1,0), (0,1,0), (0,0,1), (1,0,1), (1,1,1), (0,1,1)
-				// 对应到块段的坐标顺序为：[0, 1, 3, 2, 4, 5, 7, 6]
+				// Calculate 8 vertex coordinates of block (based on min corner and size)
+				// VTK_HEXAHEDRON vertex order: (0,0,0), (1,0,0), (1,1,0), (0,1,0), (0,0,1), (1,0,1), (1,1,1), (0,1,1)
+				// Corresponding block coordinate order: [0, 1, 3, 2, 4, 5, 7, 6]
 				double vertices[8][3] = {
 					{minX, minY, minZ},  // 0: (0,0,0)
 					{maxX, minY, minZ},  // 1: (1,0,0)
@@ -321,17 +321,17 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 					{minX, maxY, maxZ}   // 7: (0,1,1)
 				};
 
-				// 添加顶点到points
+				// Add vertices to points
 				vtkIdType pointIds[8];
 				for (int i = 0; i < 8; i++)
 				{
 					pointIds[i] = points->InsertNextPoint(vertices[i]);
 				}
 
-				// 创建六面体单元
+				// Create hexahedral cell
 				vtkSmartPointer<vtkHexahedron> hex = vtkSmartPointer<vtkHexahedron>::New();
 
-				// 直接按顺序设置，因为 vertices 数组已经满足 VTK_HEXAHEDRON 规范
+				// Set points directly in order since vertices array already satisfies VTK_HEXAHEDRON specification
 				for (int i = 0; i < 8; i++)
 				{
 					hex->GetPointIds()->SetId(i, pointIds[i]);
@@ -339,7 +339,7 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 
 				cells->InsertNextCell(hex);
 
-				// 存储块段大小
+				// Store block size
 				int iLevel = log2(std::round(dXLenCloud / xLen));
 				cellData->InsertNextValue(/*iLevel*/xLen * yLen * zLen);
 
@@ -358,12 +358,12 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 	std::cout << "Created " << points->GetNumberOfPoints() << " vertices" << std::endl;
 	std::cout << "Created " << cells->GetNumberOfCells() << " hexahedral cells" << std::endl;
 
-	// 组装非结构化网格
+	// Assemble unstructured grid
 	unstructuredGrid->SetPoints(points);
 	unstructuredGrid->SetCells(VTK_HEXAHEDRON, cells);
 	unstructuredGrid->GetCellData()->SetScalars(cellData);
 
-	// 写入 VTU 文件
+	// Write VTU file
 	vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
 	writer->SetFileName("VarSurfVoxGrid.vtu");
 	writer->SetInputData(unstructuredGrid);
@@ -375,38 +375,38 @@ void VoxelSurfTest::ReadCsvVarBlockVTK(std::string filename)
 
 void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool bPrune, bool bSave, bool bSimpl)
 {
-	//块段模型定义
+	// Block model definitions
 	double dOrigin[3], dDest[3];
 
-	//计算范围
+	// Calculation range
 	double dXOrigin, dYOrigin, dZOrigin, dXDest, dYDest, dZDest;
-	//块段长度
+	// Block lengths
 	double dXLen, dYLen, dZLen;
 
-	//左下角点
+	// Bottom-left corner
 	dXOrigin = std::numeric_limits<double>::max();
 	dYOrigin = std::numeric_limits<double>::max();
 	dZOrigin = std::numeric_limits<double>::max();
 
-	//右上角点
+	// Top-right corner
 	dXDest = std::numeric_limits<double>::min();
 	dYDest = std::numeric_limits<double>::min();
 	dZDest = std::numeric_limits<double>::min();
 
-	//最小单元块尺寸
+	// Minimum unit block size
 	double dbMinSize[3] = { std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max() };
 
 	std::cout << "Reading csv file: " << filename << std::endl;
 
-	//字段信息
+	// Field information
 	std::vector<std::string> header_fields;
-	std::vector<int> header_types;  //字段模型：0-int，1-float，2-string
+	std::vector<int> header_types;  // Field types: 0-int, 1-float, 2-string
 
 	try
 	{
 		io::LineReader line_reader(filename.c_str());
 
-		// 读取第一行作为表头
+		// Read first line as header
 		char* header_c_str = line_reader.next_line();
 		if (header_c_str)
 		{
@@ -420,14 +420,14 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 			return;
 		}
 
-		// 读取第二行判断类型
+		// Read second line to determine types
 		char* type_c_str = line_reader.next_line();
 		if (type_c_str)
 		{
 			char delimiter = ',';
 			std::vector<std::string> string_fields = simple_split_surf(type_c_str, delimiter);
 
-			//如果浮点数存为0，则应进一步判断是否确实为整数
+			// If float stored as 0, should further check if it's actually an integer
 			for (const auto& field : string_fields) {
 				if (can_parse_as_long(field.c_str())) {
 					header_types.push_back(0);
@@ -453,16 +453,16 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 	std::cout << "Reading csv file: first time..." << std::endl;
 
 	try
-	{//第一次遍历获取块段模型基本信息
+	{// First pass to get block model basic information
 		io::CSVReader<6> in(filename);
-		//ignore_extra_column：如果具有名称的列在文件中，但不在参数列表中，则会以静默方式忽略该列
-		//ignore_missing_column：如果具有名称的列不在文件中，但在参数列表中，则 read_row 不会修改相应的变量
+		//ignore_extra_column: If a named column exists in the file but not in the parameter list, it will be silently ignored
+		//ignore_missing_column: If a named column does not exist in the file but is in the parameter list, read_row will not modify the corresponding variable
 		in.read_header(io::ignore_extra_column, "X", "Y", "Z", "xLen", "yLen", "zLen");
 
 		double dX, dY, dZ, xLen, yLen, zLen;
 		while (in.read_row(dX, dY, dZ, xLen, yLen, zLen))
 		{
-			//取整，避免浮点问题
+			// Round to avoid floating point issues
 			xLen = std::round(xLen*1000.0)/1000.0;
 			yLen = std::round(yLen*1000.0)/1000.0;
 			zLen = std::round(zLen*1000.0)/1000.0;
@@ -514,11 +514,11 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 		return;
 	}
 
-	dXLen = dXDest - dXOrigin;  //x轴上 此块段模型的最大跨度
-	dYLen = dYDest - dYOrigin;  //y轴上 此块段模型的最大跨度
-	dZLen = dZDest - dZOrigin;  //z轴上 此块段模型的最大跨度
+	dXLen = dXDest - dXOrigin;  // Maximum span of block model on x-axis
+	dYLen = dYDest - dYOrigin;  // Maximum span of block model on y-axis
+	dZLen = dZDest - dZOrigin;  // Maximum span of block model on z-axis
 
-	//按八叉树补全块段模型范围（以左下角为基准,补全右上角）
+	// Complete block model range using octree (with bottom-left corner as reference, complete top-right)
 	double dMaxLevel = std::log2(std::max(std::max(std::round(dXLen / dbMinSize[0]), std::round(dYLen / dbMinSize[1])), std::round(dZLen / dbMinSize[2])));
 	int iMaxLevel = std::ceil(dMaxLevel);
 	double dXLenCloud = dbMinSize[0] * std::pow(2, iMaxLevel);
@@ -531,10 +531,10 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 
 	std::cout << "Reading csv file: second time..." << std::endl;
 
-	//字段信息
+	// Field information
 	std::string defstring;
 	for (int i = /*0*/6; i < header_fields.size(); i++)
-	{//从第7列开始为字段
+	{// Fields start from column 7
 		int iType = header_types[i];
 		std::string type;
 		if (iType == 0)
@@ -542,7 +542,7 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 		else if (iType == 1)
 			type = "float32_t";
 		else if (iType == 2)
-			type = "varchar24";  //24字符串大小
+			type = "varchar24";  // Max 24 characters
 		else
 			continue;
 		std::string name = header_fields[i];
@@ -553,7 +553,7 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 		defstring += name;
 	}
 
-	// 创建体素文件
+	// Create voxel file
 	double origin[3] = { dXOrigin, dYOrigin, dZOrigin };
 	double size[3] = { dXLenCloud, dYLenCloud, dZLenCloud };
 	double rot[3] = { 0.0, 0.0, 0.0 };
@@ -568,7 +568,7 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 
 	size_t quad_count = 0;
 
-	// 构建布尔体积模型
+	// Build boolean volume model
 	{
 		VARextVoxSurf* pSurface = VARSURFACE_Init("VarSurf.tree");
 
@@ -578,9 +578,9 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 		int iSize[3];
 		{
 			try
-			{	//第二次遍历创建块段模型
+			{	// Second pass to create block model
 				io::LineReader line_reader(filename.c_str());
-				// 第一行为表头
+				// First line is header
 				char* header_c_str = line_reader.next_line();
 
 				std::vector<std::string> string_fields;
@@ -591,7 +591,7 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 					char delimiter = ',';
 					simple_split_surf(line_c_str, delimiter, string_fields);
 
-					//第一列为索引列
+					// First column is index
 					dX[0] = std::stod(string_fields[0]);
 					dX[1] = std::stod(string_fields[1]);
 					dX[2] = std::stod(string_fields[2]);
@@ -600,14 +600,14 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 					zLen = std::stod(string_fields[5]);
 					
 					if (dThresh >= 0.0)
-					{//阈值约束判定（不同约束下的时间判定）
+					{// Threshold constraint check (time check under different constraints)
 						std::string str = string_fields[6];
 						double dStr = std::stod(str);
 						if (dStr >= dThresh)
 							continue;
 					}
 
-					// 将块原点坐标转换为相对于包围盒左下角的偏移，再除以体素大小并向下取整
+					// Convert block origin coordinates to offset relative to bounding box bottom-left, then divide by voxel size and floor
 					iI = static_cast<int>(std::floor((dX[0] - origin[0]) / dbMinSize[0]));
 					iJ = static_cast<int>(std::floor((dX[1] - origin[1]) / dbMinSize[1]));
 					iK = static_cast<int>(std::floor((dX[2] - origin[2]) / dbMinSize[2]));
@@ -615,7 +615,7 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 					iSize[1] = static_cast<int>(std::floor(yLen / dbMinSize[1]));
 					iSize[2] = static_cast<int>(std::floor(zLen / dbMinSize[2]));
 
-					//增加一个可变块
+					// Add a variable block
 					VARSURFACE_Insert(pSurface, VARextvoxel_addr(iI, iJ, iK, iSize));
 
 					++iCsv;
@@ -635,7 +635,7 @@ void VoxelSurfTest::ReadCsvVarBlock(std::string filename, double dThresh, bool b
 
 		VARSURFACE_TreeInfo(pSurface);
 		if (bPrune)
-		{//需要执行剪枝操作
+		{// Need to execute pruning operation
 			t0 = std::chrono::steady_clock::now();
 			VARSURFACE_Prune(pSurface);
 			t1 = std::chrono::steady_clock::now();

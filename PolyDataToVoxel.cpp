@@ -28,7 +28,7 @@ void PolyDataToVoxel::SetInputData(vtkPolyData* poly, bool bComputeBounds)
   polyData = vtkSmartPointer<vtkPolyData>::New();
   polyData->DeepCopy(poly);
   if (bComputeBounds)
-  {// 先设置外包
+  {// First set the bounding box
     ComputeBounds();
   }
 
@@ -76,18 +76,18 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::GetBoundarySurface()
     return nullptr;
   }
 
-  // 1. 计算包围盒  
+  // 1. Compute bounding box  
 
-  // 2. 计算图像维度
+  // 2. Compute image dimensions
   int dims[3];
   dims[0] = static_cast<int>((offsetBounds[1] - offsetBounds[0]) / spacing[0]) + 1;
   dims[1] = static_cast<int>((offsetBounds[3] - offsetBounds[2]) / spacing[1]) + 1;
   dims[2] = static_cast<int>((offsetBounds[5] - offsetBounds[4]) / spacing[2]) + 1;
 
-  // 3. 创建模板数据
+  // 3. Create stencil data
   auto stencilData = vtkSmartPointer<vtkImageStencilData>::New();
 
-  //改进：重写vtkPolyDataToImageStencil
+  // Improvement: Rewrite vtkPolyDataToImageStencil
 
   double newOrigin[3] = { 0,0,0 };
   auto stencilFilter = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
@@ -99,7 +99,7 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::GetBoundarySurface()
   stencilFilter->Update();
   stencilData->DeepCopy(stencilFilter->GetOutput());
 
-  // 4. 提取边界四边形
+  // 4. Extract boundary quads
   auto boundaryMesh = ExtractBoundaryQuadsOpt(stencilData, dims);
   
   TranslatePolyData(boundaryMesh, offset[0], offset[1], offset[2]);
@@ -139,11 +139,11 @@ void PolyDataToVoxel::TranslatePolyData(vtkPolyData* polyData, double tx, double
 
   for (vtkIdType i = 0; i < numPoints; ++i)
   {
-    points->GetPoint(i, point); // 获取当前点坐标
-    point[0] += tx;             // X方向平移
-    point[1] += ty;             // Y方向平移
-    point[2] += tz;             // Z方向平移
-    points->SetPoint(i, point); // 更新点坐标
+    points->GetPoint(i, point); // Get current point coordinates
+    point[0] += tx;             // Translate in X direction
+    point[1] += ty;             // Translate in Y direction
+    point[2] += tz;             // Translate in Z direction
+    points->SetPoint(i, point); // Update point coordinates
   }
 }
 
@@ -167,10 +167,10 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::DualContouring(
   points->Allocate(iMaxDim * iMaxDim);
   quads->Allocate(iMaxDim * iMaxDim);
 
-  // 获取体素数量 (每个维度减1)
+  // Get voxel count (subtract 1 from each dimension)
   int voxelDims[3] = { dims[0] - 1, dims[1] - 1, dims[2] - 1 };
 
-  //分三个轴向扫描线遍历【其实就是DC法，也类似于扫描线奇偶性法——更快，因为可以跳过中间单元】
+  // Scanline traversal along three axes [This is essentially the DC method, similar to scanline parity method - faster because middle cells can be skipped]
 
 
 
@@ -199,31 +199,31 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::ExtractBoundaryQuadsOpt(
   points->Allocate(iMaxDim * iMaxDim);
   quads->Allocate(iMaxDim * iMaxDim);
 
-  // 使用二维切片缓存，替换vtkBitArray为DynamicBitset
-  std::vector<DynamicBitset> currentSlice(dims[1]); // 当前切片 z
-  std::vector<DynamicBitset> prevSlice(dims[1]);    // 前一切片 z-1
-  std::vector<DynamicBitset> nextSlice(dims[1]);    // 下一切片 z+1
+  // Use 2D slice caching, replace vtkBitArray with DynamicBitset
+  std::vector<DynamicBitset> currentSlice(dims[1]); // Current slice z
+  std::vector<DynamicBitset> prevSlice(dims[1]);    // Previous slice z-1
+  std::vector<DynamicBitset> nextSlice(dims[1]);    // Next slice z+1
 
-  // 预填充切片数据的lambda函数
+  // Lambda function to pre-fill slice data
   auto fillSlice = [&](int z, std::vector<DynamicBitset>& slice)
   {
     for (int y = 0; y < dims[1]; y++)
     {
-      // 初始化或重置bitset
+      // Initialize or reset bitset
       if (slice[y].size() != dims[0])
       {
-        slice[y] = DynamicBitset(dims[0]); // 初始化为全0
+        slice[y] = DynamicBitset(dims[0]); // Initialize to all 0
       }
       else
       {
-        slice[y].reset(); // 快速重置现有bitset
+        slice[y].reset(); // Fast reset existing bitset
       }
 
       int r1=-1, r2=-1;
       int iter = 0;
       int moreSubExtents = 1;
 
-      // 获取当前扫描线的所有区间
+      // Get all intervals for current scanline
       while (moreSubExtents)
       {
         moreSubExtents = stencilData->GetNextExtent(r1, r2, 0, dims[0] - 1, y, z, iter);
@@ -246,62 +246,62 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::ExtractBoundaryQuadsOpt(
     int k = 323;
     int iTest = stencilData->IsInside(i, j, k);
     double p0[3];
-    p0[0] = /*origin[0] + */ i * spacing[0]; // 体素中心
+    p0[0] = /*origin[0] + */ i * spacing[0]; // voxel center
     p0[1] = /*origin[1] + */ j * spacing[1];
     p0[2] = /*origin[2] + */ k * spacing[2];
     int ii = 0;
   }
 
-  // 初始填充 z=0
+  // Initial fill z=0
   fillSlice(0, currentSlice);
   if (dims[2] > 1)
   {
-    fillSlice(1, nextSlice); // 填充 z=1
+    fillSlice(1, nextSlice); // Fill z=1
   }
 
-  // 处理所有Z切片
+  // Process all Z slices
   for (int z = 0; z < dims[2]; z++)
   {
-    // 处理当前切片中的每个体素
+    // Process each voxel in current slice
     for (int y = 0; y < dims[1]; y++)
     {
       for (int x = 0; x < dims[0]; x++)
       {
-        // 检查是否为实体体素
+        // Check if it's a solid voxel
         if (currentSlice[y].test(x))
         {
-          // 检查六个方向的面
-          // 左侧 (x-1)
+          // Check faces in six directions
+          // Left face (x-1)
           if (x == 0 || !currentSlice[y].test(x - 1))
           {
             AddQuad(points, quads, x, y, z, 0);
           }
 
-          // 右侧 (x+1)
+          // Right face (x+1)
           if (x == dims[0] - 1 || !currentSlice[y].test(x + 1))
           {
             AddQuad(points, quads, x + 1, y, z, 0);
           }
 
-          // 前侧 (y-1)
+          // Front face (y-1)
           if (y == 0 || !currentSlice[y - 1].test(x))
           {
             AddQuad(points, quads, x, y, z, 1);
           }
 
-          // 后侧 (y+1)
+          // Back face (y+1)
           if (y == dims[1] - 1 || !currentSlice[y + 1].test(x))
           {
             AddQuad(points, quads, x, y + 1, z, 1);
           }
 
-          // 底侧 (z-1)
+          // Bottom face (z-1)
           if (z == 0 || !prevSlice[y].test(x))
           {
             AddQuad(points, quads, x, y, z, 2);
           }
 
-          // 顶侧 (z+1)
+          // Top face (z+1)
           if (z == dims[2] - 1 || !nextSlice[y].test(x))
           {
             AddQuad(points, quads, x, y, z + 1, 2);
@@ -310,18 +310,18 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::ExtractBoundaryQuadsOpt(
       }
     }
 
-    // 更新切片缓存（最后一层除外）
+    // Update slice cache (except last layer)
     if (z < dims[2] - 1)
     {
       prevSlice = std::move(currentSlice);
       currentSlice = std::move(nextSlice);
-      nextSlice = std::vector<DynamicBitset>(dims[1]); // 重置
-      // 填充下一层的 nextSlice（z+2）
+      nextSlice = std::vector<DynamicBitset>(dims[1]); // Reset
+      // Fill nextSlice for next layer (z+2)
       fillSlice(z + 2, nextSlice);
     }
   }
 
-  // 创建多边形数据
+  // Create polygon data
   auto polyData = vtkSmartPointer<vtkPolyData>::New();
   polyData->SetPoints(points);
   polyData->SetPolys(quads);
@@ -330,7 +330,7 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::ExtractBoundaryQuadsOpt(
   cleaner->SetInputData(polyData);
   cleaner->PointMergingOn();
   // cleaner->SetTolerance(0.1 * std::min({ spacing[0], spacing[1], spacing[2] })); //
-  // 提高去重判断效率(如果改为0.01，则效率会明显下降)
+  // Improve deduplication efficiency (if changed to 0.01, efficiency will decrease significantly)
   cleaner->Update();
 
   auto boundaryMesh = cleaner->GetOutput();
@@ -356,7 +356,7 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::ExtractBoundaryQuads(
     int k = 323;
     int iTest = stencilData->IsInside(i, j, k);
     double p0[3];
-    p0[0] = /*origin[0] + */ i * spacing[0]; // 体素中心
+    p0[0] = /*origin[0] + */ i * spacing[0]; // voxel center
     p0[1] = /*origin[1] + */ j * spacing[1];
     p0[2] = /*origin[2] + */ k * spacing[2];
     int ii = 0;
@@ -365,49 +365,49 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::ExtractBoundaryQuads(
   std::vector<quadv> vecQUADs;
   vecQUADs.reserve(iMaxDim * iMaxDim);
 
-  // 处理所有Z切片
+  // Process all Z slices
   for (int z = 0; z < dims[2]; z++)
   {
-    // 处理当前切片中的每个体素
+    // Process each voxel in current slice
     for (int y = 0; y < dims[1]; y++)
     {
       for (int x = 0; x < dims[0]; x++)
       {
-        // 检查是否为实体体素
+        // Check if it's a solid voxel
         if (stencilData->IsInside(x, y, z))
         {
-          // 检查六个方向的面
-          // 左侧 (x-1)
+          // Check faces in six directions
+          // Left face (x-1)
           if (x == 0 || !stencilData->IsInside(x-1, y, z))
           {
             vecQUADs.push_back(quadv(x, y, z, 0));
           }
 
-          // 右侧 (x+1)
+          // Right face (x+1)
           if (x == dims[0] - 1 || !stencilData->IsInside(x+1, y, z))
           {
             vecQUADs.push_back(quadv(x + 1, y, z, 0));
           }
 
-          // 前侧 (y-1)
+          // Front face (y-1)
           if (y == 0 || !stencilData->IsInside(x, y-1, z))
           {
             vecQUADs.push_back(quadv(x, y, z, 1));
           }
 
-          // 后侧 (y+1)
+          // Back face (y+1)
           if (y == dims[1] - 1 || !stencilData->IsInside(x, y+1, z))
           {
             vecQUADs.push_back(quadv(x, y + 1, z, 1));
           }
 
-          // 底侧 (z-1)
+          // Bottom face (z-1)
           if (z == 0 || !stencilData->IsInside(x, y, z-1))
           {
             vecQUADs.push_back(quadv(x, y, z, 2));
           }
 
-          // 顶侧 (z+1)
+          // Top face (z+1)
           if (z == dims[2] - 1 || !stencilData->IsInside(x, y, z+1))
           {
             vecQUADs.push_back(quadv(x, y, z + 1, 2));
@@ -425,7 +425,7 @@ vtkSmartPointer<vtkPolyData> PolyDataToVoxel::ExtractBoundaryQuads(
     AddQuadOpt(quads, locator, vecQUADs[i].i, vecQUADs[i].j, vecQUADs[i].k, vecQUADs[i].dir);
   }
 
-  // 创建多边形数据
+  // Create polygon data
   auto polyData = vtkSmartPointer<vtkPolyData>::New();
   polyData->SetPoints(points);
   polyData->SetPolys(quads);
@@ -438,11 +438,11 @@ void PolyDataToVoxel::AddQuadOpt(vtkCellArray* quads, vtkIncrementalOctreePointL
 {
   double p0[3], p1[3], p2[3], p3[3];
 
-  // 计算顶点坐标
+  // Compute vertex coordinates
   switch (faceDir)
   {
     case 0:                                            // X-facing quad
-      p0[0] = /*origin[0] + */ spacing[0] * (i - 0.5); // 体素中心
+      p0[0] = /*origin[0] + */ spacing[0] * (i - 0.5); // voxel center
       p0[1] = /*origin[1] + */ spacing[1] * (j - 0.5);
       p0[2] = /*origin[2] + */ spacing[2] * (k - 0.5);
 
@@ -460,7 +460,7 @@ void PolyDataToVoxel::AddQuadOpt(vtkCellArray* quads, vtkIncrementalOctreePointL
       break;
 
     case 1:                                            // Y-facing quad
-      p0[0] = /*origin[0] + */ spacing[0] * (i - 0.5); // 体素中心
+      p0[0] = /*origin[0] + */ spacing[0] * (i - 0.5); // voxel center
       p0[1] = /*origin[1] + */ spacing[1] * (j - 0.5);
       p0[2] = /*origin[2] + */ spacing[2] * (k - 0.5);
 
@@ -478,7 +478,7 @@ void PolyDataToVoxel::AddQuadOpt(vtkCellArray* quads, vtkIncrementalOctreePointL
       break;
 
     case 2:                                            // Z-facing quad
-      p0[0] = /*origin[0] + */ spacing[0] * (i - 0.5); // 体素中心
+      p0[0] = /*origin[0] + */ spacing[0] * (i - 0.5); // voxel center
       p0[1] = /*origin[1] + */ spacing[1] * (j - 0.5);
       p0[2] = /*origin[2] + */ spacing[2] * (k - 0.5);
 
@@ -496,7 +496,7 @@ void PolyDataToVoxel::AddQuadOpt(vtkCellArray* quads, vtkIncrementalOctreePointL
       break;
   }
 
-  // 添加四边形
+  // Add quad
   vtkIdType pts[4];
   locator->InsertUniquePoint(p0, pts[0]);
   locator->InsertUniquePoint(p1, pts[1]);
@@ -516,11 +516,11 @@ void PolyDataToVoxel::AddQuad(vtkPoints* points, vtkCellArray* quads, const int 
 {
   double p0[3], p1[3], p2[3], p3[3];
 
-  // 计算顶点坐标
+  // Compute vertex coordinates
   switch (faceDir)
   {
     case 0: // X-facing quad
-      p0[0] = /*origin[0] + */spacing[0] * (i - 0.5);  //体素中心
+      p0[0] = /*origin[0] + */spacing[0] * (i - 0.5);  // voxel center
       p0[1] = /*origin[1] + */spacing[1] * (j - 0.5);
       p0[2] = /*origin[2] + */spacing[2] * (k - 0.5);
 
@@ -538,7 +538,7 @@ void PolyDataToVoxel::AddQuad(vtkPoints* points, vtkCellArray* quads, const int 
       break;
 
     case 1: // Y-facing quad
-      p0[0] = /*origin[0] + */spacing[0] * (i - 0.5);  // 体素中心
+      p0[0] = /*origin[0] + */spacing[0] * (i - 0.5);  // voxel center
       p0[1] = /*origin[1] + */spacing[1] * (j - 0.5);
       p0[2] = /*origin[2] + */spacing[2] * (k - 0.5);
 
@@ -556,7 +556,7 @@ void PolyDataToVoxel::AddQuad(vtkPoints* points, vtkCellArray* quads, const int 
       break;
 
     case 2: // Z-facing quad
-      p0[0] = /*origin[0] + */spacing[0] * (i - 0.5);  // 体素中心
+      p0[0] = /*origin[0] + */spacing[0] * (i - 0.5);  // voxel center
       p0[1] = /*origin[1] + */spacing[1] * (j - 0.5);
       p0[2] = /*origin[2] + */spacing[2] * (k - 0.5);
 
@@ -574,7 +574,7 @@ void PolyDataToVoxel::AddQuad(vtkPoints* points, vtkCellArray* quads, const int 
       break;
   }
 
-  // 添加四边形
+  // Add quad
   vtkIdType pts[4];
   pts[0] = points->InsertNextPoint(p0);
   pts[1] = points->InsertNextPoint(p1);

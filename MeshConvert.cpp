@@ -11,7 +11,7 @@ vtkSmartPointer<vtkPolyData> MeshConvert::ConvertToVTKPolyData(const std::vector
     auto points = vtkSmartPointer<vtkPoints>::New();
     auto cells = vtkSmartPointer<vtkCellArray>::New();
 
-    // 1. 添加顶点
+    // 1. Add vertices
     points->SetNumberOfPoints(inVertices.size());
     for (size_t i = 0; i < inVertices.size(); ++i)
     {
@@ -19,15 +19,15 @@ vtkSmartPointer<vtkPolyData> MeshConvert::ConvertToVTKPolyData(const std::vector
     }
     polyData->SetPoints(points);
 
-    // 2. 添加四边形单元
+    // 2. Add quad cells
     for (const auto& face : inFaces)
     {
-        // 确保是四边形（4个顶点）
+        // Ensure it's a quad (4 vertices)
         if (face.size() == 4) {
             vtkIdType pts[4] = { face[0], face[1], face[2], face[3] };
             cells->InsertNextCell(4, pts);
         }
-        // 注意：如果face是三角形(3个顶点)，此处需要不同的处理，但CQuadMeshSim可能不处理。
+        // Note: If face is a triangle (3 vertices), different handling is needed here, but CQuadMeshSim may not handle it.
     }
     polyData->SetPolys(cells);
 
@@ -40,7 +40,7 @@ void MeshConvert::ConvertFromVTKPolyData(vtkPolyData* polyData, std::vector<VARP
     outVertices.clear();
     outFaces.clear();
 
-    // 1. 获取顶点
+    // 1. Get vertices
     vtkPoints* points = polyData->GetPoints();
     if (points)
     {
@@ -54,7 +54,7 @@ void MeshConvert::ConvertFromVTKPolyData(vtkPolyData* polyData, std::vector<VARP
         }
     }
 
-    // 2. 获取单元（四边形）
+    // 2. Get cells (quads)
     vtkCellArray* polys = polyData->GetPolys();
     if (polys)
     {
@@ -62,7 +62,7 @@ void MeshConvert::ConvertFromVTKPolyData(vtkPolyData* polyData, std::vector<VARP
         vtkSmartPointer<vtkIdList> idList = vtkSmartPointer<vtkIdList>::New();
         while (polys->GetNextCell(idList))
         {
-            if (idList->GetNumberOfIds() == 4) { // 只处理四边形
+            if (idList->GetNumberOfIds() == 4) { // Only process quads
                 std::vector<int> face(4);
                 for (int i = 0; i < 4; ++i)
                 {
@@ -80,26 +80,26 @@ bool MeshConvert::SimplifyMeshWithQuadMeshSim(const std::vector<VARPoint3D>& inp
     std::vector<std::vector<int>>& outputFaces,
     double angleThreshold)
 {
-    // 1. 转换为VTK格式
+    // 1. Convert to VTK format
     vtkSmartPointer<vtkPolyData> inputPolyData = ConvertToVTKPolyData(inputVertices, inputFaces);
     if (!inputPolyData || inputPolyData->GetNumberOfPolys() == 0)
     {
-        return false; // 输入数据无效
+        return false; // Invalid input data
     }
 
-    // 2. 创建并配置简化器
+    // 2. Create and configure simplifier
     CQuadMeshSim simplifier;
     simplifier.SetAngleThreshold(angleThreshold);
-    simplifier.SetOptimize(true); // 使用优化算法，默认为false
+    simplifier.SetOptimize(true); // Use optimization algorithm, default is false
 
-    // 3. 执行简化
+    // 3. Execute simplification
     vtkSmartPointer<vtkPolyData> outputPolyData = simplifier.Simplify(inputPolyData);
     if (!outputPolyData)
     {
-        return false; // 简化失败
+        return false; // Simplification failed
     }
 
-    // 4. 转换回自定义数据结构
+    // 4. Convert back to custom data structure
     ConvertFromVTKPolyData(outputPolyData, outputVertices, outputFaces);
     return true;
 }

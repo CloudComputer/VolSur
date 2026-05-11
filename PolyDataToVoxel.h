@@ -32,9 +32,9 @@ private:
   vtkSmartPointer<vtkPolyData> polyData;
   double origin[3];
   double spacing[3];
-  double padding;  //外包扩展比例
-  double bounds[6];  //平移前的边界
-  double offsetBounds[6]; // 平移后的边界
+  double padding;  // padding expansion ratio
+  double bounds[6];  // bounds before translation
+  double offsetBounds[6]; // bounds after translation
   double offset[3];
 
   void ComputeBounds();
@@ -52,9 +52,9 @@ private:
   vtkSmartPointer<vtkPolyData> ExtractBoundaryQuads(
     vtkImageStencilData* stencilData, const int dims[3] /*, const double origin[3]*/);
 
-  // 添加四边形到网格
+  // Add quad to mesh
   void AddQuadOpt(vtkCellArray* quads, vtkIncrementalOctreePointLocator* locator,
-      const int i, const int j, const int k, const int faceDir /*, const double origin[3]*/);  //vtkIncrementalOctreePointLocator比vtkPointLocator更快
+      const int i, const int j, const int k, const int faceDir /*, const double origin[3]*/);  //vtkIncrementalOctreePointLocator is faster than vtkPointLocator
 
   void AddQuad(vtkPoints* points, vtkCellArray* quads, const int i, const int j,
     const int k, const int faceDir/*, const double origin[3]*/);
