@@ -110,9 +110,6 @@ VolSurf/
 ├── include/              # Header files for external use
 │   ├── VoxelSurfVar.h
 │   └── VoxelSurfaces.h
-├── bin/                  # Pre-built binaries
-│   ├── Debug/x64/
-│   └── Release/x64/
 ├── lib/                  # Library files
 │   ├── Debug/x64/
 │   └── Release/x64/
