@@ -32,13 +32,13 @@ VolSurf is a C++ library for efficient voxel-based surface reconstruction. It pr
 ### Building from Source
 
 1. Clone the repository:
-   ```bash
+   ```
    git clone <repository-url>
    cd VolSurf
    ```
 
 2. Open the solution file in Visual Studio:
-   - `VolSurf.sln` (if exists) or create a new project
+   - create a new c++ SurfTest.sln project
 
 3. Build the project:
    - Select the desired configuration (Debug/Release)
@@ -57,7 +57,7 @@ Pre-built binaries are available in the `bin/` and `x64/` directories:
 
 The `SurfTest.exe` executable provides a command-line interface:
 
-```bash
+```
 SurfTest.exe [options]
 ```
 
@@ -74,7 +74,7 @@ SurfTest.exe [options]
 
 **Example:**
 
-```bash
+```
 SurfTest.exe -f data.csv -t 0.5 -p 1 -s 1 -m 1
 ```
 
@@ -127,7 +127,6 @@ VolSurf/
 
 ## Documentation
 
-- `docs/USER_GUIDE.md` - Detailed user guide with API documentation
-- `docs/TUTORIAL.md` - Tutorials for typical use cases
-- `docs/DEPENDENCIES.md` - Dependency documentation
+- `READMET.md`
+- `docs/DATA_FORMAT.md`
 
